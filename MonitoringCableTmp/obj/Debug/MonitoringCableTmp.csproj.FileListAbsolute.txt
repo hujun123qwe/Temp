@@ -1,0 +1,10 @@
+D:\MonitoringCableTmp\MonitoringCableTmp\bin\Debug\MonitoringCableTmp.exe.config
+D:\MonitoringCableTmp\MonitoringCableTmp\obj\Debug\MonitoringCableTmp.exe
+D:\MonitoringCableTmp\MonitoringCableTmp\obj\Debug\MonitoringCableTmp.pdb
+D:\MonitoringCableTmp\MonitoringCableTmp\bin\Debug\MonitoringCableTmp.exe
+D:\MonitoringCableTmp\MonitoringCableTmp\bin\Debug\MonitoringCableTmp.pdb
+D:\MonitoringCableTmp\MonitoringCableTmp\obj\Debug\MonitoringCableTmp.csprojResolveAssemblyReference.cache
+D:\MonitoringCableTmp\MonitoringCableTmp\obj\Debug\MonitoringCableTmp.frmMain.resources
+D:\MonitoringCableTmp\MonitoringCableTmp\obj\Debug\MonitoringCableTmp.Properties.Resources.resources
+D:\MonitoringCableTmp\MonitoringCableTmp\obj\Debug\MonitoringCableTmp.csproj.GenerateResource.Cache
+D:\MonitoringCableTmp\MonitoringCableTmp\obj\Debug\MonitoringCableTmp.frmTempSelect.resources
