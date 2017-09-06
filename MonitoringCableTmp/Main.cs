@@ -19,8 +19,10 @@ namespace MonitoringCableTmp
     public partial class frmMain : Form
     {
         private string FILE_DIR = Directory.GetCurrentDirectory();
-
-
+        private string[] chInfo = new string[3];
+        private int chLenth;
+        private int[,] AlarmUPDown; //报警上下限数组
+        private int[] AlarmValues;//报警值
         /// <summary>
         /// 主窗口构造函数
         /// </summary>
@@ -35,12 +37,49 @@ namespace MonitoringCableTmp
         /// </summary>
         private void InitFrame()
         {
+
             IntChart1(1000);
             IntChart2(1000);
             timer1.Enabled = false;
             lblStatus.Text = "系统准备就绪";
         }
-        
+        /// <summary>
+        /// 根据通道号获取报警上下限及报警值到数组
+        /// </summary>
+        /// <param name="ch"></param>
+        private void getAlarmByCh(string ch)
+        {
+            string[] alarmStr;
+          //  string[] stempV = tempValue.Split('_');
+          //  ponitID = stempV[0];
+          //  tempValue = stempV[1];
+            string alarmReStr;
+            dbComm dbcom;
+            dbcom = new dbComm();
+            alarmStr = dbcom.getParagAlarmBYChIN(ch);
+            AlarmUPDown = new int[alarmStr.Length, 2];
+            AlarmValues = new int[alarmStr.Length];
+            for (int i=0 ;i<alarmStr.Length;i++)
+            {
+                alarmReStr = alarmStr[i];
+                string[] stempV = alarmReStr.Split('_');
+                AlarmUPDown[i, 0] =Convert.ToInt32( stempV[0]);
+                AlarmUPDown[i, 1] = Convert.ToInt32(stempV[1]);
+                AlarmValues[i] = Convert.ToInt32(stempV[2]); 
+            }
+        }
+        public int AlarmValue(int ponitValues)
+        {
+            int alarmV=0;
+            for (int i = 0; i < AlarmValues.Length; i++)
+            {
+                if ((ponitValues>=AlarmUPDown[i,0])&(ponitValues<=AlarmUPDown[i,1])){
+                    alarmV = AlarmValues[i];
+                    break;
+                }
+            }
+            return alarmV;
+        }
         /// <summary>
         /// 通道分区温度曲线
         /// </summary>
@@ -122,11 +161,15 @@ namespace MonitoringCableTmp
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void toolStripButton4_Click(object sender, EventArgs e)
-        {
-            DirectoryInfo difo = Directory.GetParent(FILE_DIR);
-            MyFile myFile = new MyFile("runing.txt", difo.ToString()+"\\log");
-            myFile.writeFile(DateTime.Now + "     关闭系统");
-            Close();
+                    {
+            MessageBoxButtons messButton = MessageBoxButtons.OKCancel;
+            DialogResult dr =  MessageBox.Show("确认要退出吗？", "系统退出", messButton);
+            if (dr == DialogResult.OK)
+            {
+                writeLog("     关闭系统");
+                Close();
+            }
+ 
         }
 
         /// <summary>
@@ -136,75 +179,16 @@ namespace MonitoringCableTmp
         /// <param name="e"></param>
         private void button2_Click(object sender, EventArgs e)
         {
-            DirectoryInfo difo = Directory.GetParent(FILE_DIR);
-            MyFile myFile = new MyFile("runing.txt", difo.ToString() + "\\log");
-            if (!timer1.Enabled)
-            {
-                myFile.writeFile(DateTime.Now + "     开始运行");
-                timer1.Enabled = true;
-                lblStatus.Text = "正在监测各节点温度";
-                btnStart.Text = "暂停";
-            }
-            else
-            {
-                myFile.writeFile(DateTime.Now + "     系统暂停");
-                timer1.Enabled = false;
-                lblStatus.Text = "监测系统已暂停";
-                btnStart.Text = "开始";
-            }
-            //string ffilepath ,logFilename;
-            //FileInfo finfo;
-            //DirectoryInfo difo;
-            //ffilepath = Directory.GetCurrentDirectory();
-            //DateTime dt;
-            //difo = Directory.GetParent(ffilepath);
-            //logFilename = difo +@"\log\runing.txt";
-            //finfo = new FileInfo(logFilename);
-
-            //if (finfo.Exists)
-            //{
-            //    dt = new DateTime();
-            //    dt = DateTime.Now;
-            //    StreamWriter sw2 = new StreamWriter(logFilename, true, Encoding.UTF8);
-            //    sw2.WriteLine(dt.ToString()+"     开始运行");
-            //    sw2.Close();
-            //}else
-            //{
-            //    dt = new DateTime();
-            //    dt = DateTime.Now;
-            //    StreamWriter sw = new StreamWriter(logFilename, true);
-            //    sw.WriteLine(dt.ToString() + "     开始运行");
-            //    sw.Close();
-                    
-            //}
+            
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void btnShowAlarm_Click(object sender, EventArgs e)
         {
-            //string filename=@"D:\\MonitoringCableTmp\MonitoringCableTmp\bin\Debug\test1.xml";
-            XMLHealper xml = new XMLHealper();
-            //xml.CreatexmlDocument(filename, "key1", "gb2312");
-            xml.OpenXML();
-            label15.Text = xml.FilePath;
-            //xml.AddParentNode("key");
-            //xml.AddChildNode("key","key1");
-            //xml.AddParentNode("aaaa");
-            xml.AddAttribute("key1", "b");
-            xml.SavexmlDocument();
+            frmAlarm frm = new frmAlarm();
+            frm.Show();
         }
 
-        private void button4_Click(object sender, EventArgs e)
-        {
   
-             timer1.Enabled = true;
-        }
-
-        private void tChart1_DoubleClick(object sender, EventArgs e)
-        {
-  
-
-        }
-
         /// <summary>
         /// 每5秒执行一次
         /// </summary>
@@ -215,14 +199,44 @@ namespace MonitoringCableTmp
             int ii=0;
             //读取通道1各距离温度值，并存储在浮点数组_pfData内
             DtsComm dts = new DtsComm();
+            dbComm dbcomm = new dbComm();
+            int intp;
+            int alarmVlues;
+            DateTime dt;
+            dt= new DateTime();
+            dt =DateTime.Now;
+            string strAlarm;
+            chInfo = dbcomm.getChanalStartAndEnd("1");
+            
+            getAlarmByCh("1");//查找1通道对应的报警值
+
+            chLenth = Convert.ToInt32(chInfo[2]);
+            IntChart1(chLenth);
+            IntChart2(chLenth);
+
             ii = dts.ReadDtsData(1);
+
             tChart2.Series[0].Clear();
+            tChart1.Series[0].Clear();
             toolStripProgressBar1.Value = 0;
             if (ii > 0)
             {
-                for (int i = 0; i <1000; i++)//分区开始130，分区结束2000
+                for (int i = dts.chStart; i < dts.chEnd; i++)//分区开始130，分区结束2000
                 {
-                    tChart2.Series[0].Add(i,(double)dts._pfData[i], Color.Red);
+                    intp = i - dts.chStart;
+
+                    alarmVlues=AlarmValue(intp);
+
+                    if ((double)dts._pfData[i] > alarmVlues)
+                    {
+                        strAlarm = "报警时间：" + dt.ToString() + "|  距离：" + intp.ToString() + "（米）|  温度：" + Math.Round(dts._pfData[i], 1) + "℃";
+                        listBox1.Items.Add("报警时间：" + dt.ToString() + "|  距离：" + intp.ToString() + "（米）|  温度：" + Math.Round(dts._pfData[i], 1) + "℃");
+                        writeAlarm(strAlarm);
+                    }
+
+
+                    tChart2.Series[0].Add(i - dts.chStart, (double)dts._pfData[i], Color.Red);
+                    tChart1.Series[0].Add(i - dts.chStart, (double)dts._pfData[i], Color.Red);
                     toolStripProgressBar1.PerformStep();
                 }
             }
@@ -241,64 +255,6 @@ namespace MonitoringCableTmp
             string[] arr = strXYValues.Split(' ');
             e.Text = "距离：" + arr[0] + " (米)" + "\r\n" + "温度：" + arr[1] + "(°C)";
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void button5_Click(object sender, EventArgs e)
-        {
-            
-            string ffilepath, logFilename;
-            string runTemp;
-            string stempValues, sDatetime;
-            int ii = 0;
-            double svalues = 0;
-            //FileInfo finfo;
-            DirectoryInfo difo;
-            ffilepath = Directory.GetCurrentDirectory();
-            DateTime dt;
-            difo = Directory.GetParent(ffilepath);
-            logFilename = difo + @"\log\runing.txt";
-            StreamReader sw = new  StreamReader(logFilename);
-            tChart1.Series[0].Clear();
-            //tChart1.Series[0].XValues.DateTime = true;
-            for (int i = 1; i < 1000; i++)
-            {
-                runTemp = sw.ReadLine();
-                if (sw.Peek() != -1)
-                {
-                    string[] stempValue = runTemp.Split(' ');
-                    sDatetime =  stempValue[0]+" "+stempValue[1];
-                    sDatetime = sDatetime.Replace('/', '-');
-                    stempValues = stempValue[2];
-                    string[] stempV = stempValues.Split('_');  
-                    //ii = Convert.ToInt32(stempV[0]);
-                    svalues = Convert.ToDouble(stempV[1]);
-                    tChart1.Series[0].Add(svalues, Color.Red);
-                }
-            }
-
-            sw.Close();
-            
-        }
-
-        private void button6_Click(object sender, EventArgs e)
-        {
-            string ffilepath, logFilename;
-            string runTemp;
-            string stempValues, sDatetime;
-            int ii = 0;
-            double svalues = 0;
-            //  FileInfo finfo;
-            DirectoryInfo difo;
-            ffilepath = Directory.GetCurrentDirectory();
-            DateTime dt;
-            difo = Directory.GetParent(ffilepath);
-            logFilename = difo + @"\log\runing.txt";
-            StreamReader sw = new StreamReader(logFilename);
-        }
         
         /// <summary>
         /// 历史温度记录查看窗口
@@ -311,18 +267,6 @@ namespace MonitoringCableTmp
             TempSelect.ShowDialog();
         }
 
-        private void button7_Click(object sender, EventArgs e)
-        {
-            DtsComm dtscomm;
-            string hisDataFileName;
-            dtscomm = new DtsComm();
-            hisDataFileName= dtscomm.FindOrCreateDirectoryAndFiles();
-            if (hisDataFileName != null)
-            {
-                MessageBox.Show(hisDataFileName);
-            }
-        }
-
         /// <summary>
         /// 开始按钮
         /// </summary>
@@ -330,18 +274,27 @@ namespace MonitoringCableTmp
         /// <param name="e"></param>
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
-            DirectoryInfo difo = Directory.GetParent(FILE_DIR);
-            MyFile myFile = new MyFile("runing.txt", difo.ToString() + "\\log");
+            string[] alist;
+
+            dbComm dbconn;
+            dbconn = new dbComm();
+            alist = dbconn.getChanaleList();
+            foreach(string chName in alist)
+            {
+              comboBox1.Items.Add(chName);
+            }
+            
+
             if (!timer1.Enabled)
             {
-                myFile.writeFile(DateTime.Now + "     开始运行");
+                writeLog("     开始运行");
                 timer1.Enabled = true;
                 lblStatus.Text = "正在监测各节点温度";
                 btnStart.Text = "暂停";
             }
             else
             {
-                myFile.writeFile(DateTime.Now + "     系统暂停");
+                writeLog("     系统暂停");
                 timer1.Enabled = false;
                 lblStatus.Text = "监测系统已暂停";
                 btnStart.Text = "开始";
@@ -355,12 +308,40 @@ namespace MonitoringCableTmp
         /// <param name="e"></param>
         private void toolStripButton2_Click(object sender, EventArgs e)
         {
+            DialogResult dr = MessageBox.Show("确认要停止采集数据吗？", "系统", MessageBoxButtons.OKCancel);
+            if (dr == DialogResult.OK)
+            {
+                writeLog("  系统停止");
+                timer1.Enabled = false;
+                lblStatus.Text = "系统已停止运行";
+                btnStart.Text = "暂停";
+            }
+        }
+
+        private void writeLog(string line)
+        {
             DirectoryInfo difo = Directory.GetParent(FILE_DIR);
             MyFile myFile = new MyFile("runing.txt", difo.ToString() + "\\log");
-            myFile.writeFile(DateTime.Now + "     系统停止");
-            timer1.Enabled = false;
-            lblStatus.Text = "系统已停止运行";
+            myFile.writeFile(DateTime.Now + line);
         }
-        
+
+        private void writeAlarm(string line)
+        {
+            DirectoryInfo difo = Directory.GetParent(FILE_DIR);
+            MyFile myFile = new MyFile("alarm.txt", difo.ToString() + "\\Alarm");
+            myFile.writeFile(DateTime.Now + line);
+        }
+
+        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+
+        }
+
+        private void 基本参数设置ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            frmDtsConfig dstconfig;
+            dstconfig = new frmDtsConfig();
+            dstconfig.Show();
+        }
     }
 }

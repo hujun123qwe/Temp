@@ -62,6 +62,32 @@ namespace MonitoringCableTmp
             return lines;
         }
 
+        public string[] readFileToString()
+        {
+            string path = Path.Combine(file_addr, file_name);
+            string line = null;
+            string[] lines = null;
+            int i = 0;
+            if (!File.Exists(path))
+            {
+                MessageBox.Show("文件" + file_name + "不存在");
+            }
+            else
+            {
+                FileStream fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                StreamReader sr = new StreamReader(fs, Encoding.UTF8);
+                while ((line = sr.ReadLine()) != null)
+                {
+                    lines[i] = line;
+                    i++;
+                }
+                sr.Close();
+                fs.Close();
+                return lines;
+            }
+            return lines;
+        }
+
         /// <summary>
         /// 以字节方式写文件（一行）
         /// </summary>
