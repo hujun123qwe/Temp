@@ -62,6 +62,10 @@ namespace MonitoringCableTmp
            bool bDataFlag = true;
 
            private string dtsTcpIp;
+        
+           public int chStart,chEnd,chLenth;
+           private string[] chInfo;
+
 
            public string DtsTcpIp
            {
@@ -90,73 +94,64 @@ namespace MonitoringCableTmp
             /// </summary>
             /// <param name="startLen">开始点</param>
             /// <param name="endLen">结束点</param>
-           private void WriteTempToTxtFiles(int startLen, int endLen)
+           private void WriteTempToTxtFiles(string ch,DateTime sDate, int startLen, int endLen)
            {
                string runTemp;
                string hisDataFileName;
+               string chName = null;
+               chName = ch;
 
-               FileInfo finfo;
-               DateTime dt;
-
-               hisDataFileName = FindOrCreateDirectoryAndFiles();
-               finfo = new FileInfo(hisDataFileName);
-               if (finfo.Exists)
+               hisDataFileName = FindOrCreateDirectoryAndFiles(chName, sDate);// DateTime.Now.ToString("yyyy-MM-dd") + ".dat";
+               if (hisDataFileName != null)
                {
-                   dt = new DateTime();
-                   dt = DateTime.Now;
-                   StreamWriter sw2 = new StreamWriter(hisDataFileName, true, Encoding.UTF8);
-                   runTemp = dt.ToLongTimeString();
-                   for (int i = startLen; i<endLen+1; i++)
-                   {
-                       runTemp = runTemp +" "+ i.ToString()+"_"+Math.Round(_pfData[i],1).ToString();
-                   }
-                   sw2.WriteLine(runTemp);
-                   sw2.Close();
+               DirectoryInfo difo = Directory.GetParent(Directory.GetCurrentDirectory());
+               MyFile myFile = new MyFile(hisDataFileName, difo.ToString());
+               runTemp = DateTime.Now.ToLongTimeString();
+               for (int i = startLen; i < endLen + 1; i++)
+               {
+                   //runTemp = runTemp + ' ' + (i - startLen).ToString() + '_' + Math.Round(_pfData[i], 1).ToString();//从设定为0米开始写入数据
+                   runTemp = runTemp + ' ' + (i - startLen).ToString() + '_' + string.Format("{0:###.##}", Math.Round(_pfData[i], 1));
                }
-               else
-               {
-                   dt = new DateTime();
-                   dt = DateTime.Now;
-                   StreamWriter sw = new StreamWriter(hisDataFileName, true);
-                   runTemp = dt.ToLongTimeString();
-                   for (int i = startLen; i < endLen + 1; i++)
-                   {
-                       runTemp = runTemp + " " + Math.Round(_pfData[i], 1).ToString();
-                   }
-                   sw.WriteLine(runTemp);
-                   sw.Close();
+               myFile.writeFile(runTemp);
                }
            }
+
           /// <summary>
           /// 查找获建立HisData文件夹下当日文件，对文件夹和 文件查找，如果不存在就创建。
           /// </summary>
           /// <returns>返回已存在的或者新建的文件完整路径，无法找到或建立返回空</returns>
-           public string FindOrCreateDirectoryAndFiles()
+           public string FindOrCreateDirectoryAndFiles(string ch, DateTime sDate)
            {
                 string directoryName,filePath,hisDatadirectoryName;
                 string hisDataName, hisDataPathName;
                 string reHisDataName=null;
+                string chName = null;
                    
                 FileInfo finfo;
                 DirectoryInfo difo;
                 filePath = Directory.GetCurrentDirectory();
+               
                 DateTime dt;
                 dt = new DateTime();
-                dt = DateTime.Now;
+                dt = sDate;
+
+                chName = ch;
+                if (chName == null)
+                {
+                    return null;
+                }
+
                 directoryName = "HisData";
                 difo = Directory.GetParent(filePath);
-                hisDatadirectoryName= difo+@"\"+directoryName;
+                hisDatadirectoryName = difo + @"\" + directoryName + @"\" + chName;
                 if (!Directory.Exists(hisDatadirectoryName))
                 {
                     Directory.CreateDirectory(hisDatadirectoryName);
 
                 }
+                hisDataName = DateFormatToString(sDate);
+                hisDataPathName=hisDatadirectoryName+@"\"+ hisDataName+".dat";
 
-                //以日期作为文件名
-                //hisDataName = dt.ToString("yyyy-MM-dd");
-                hisDataName = dt.ToShortDateString();
-                hisDataName= hisDataName.Replace('/','-') +".dat";
-                hisDataPathName=hisDatadirectoryName+@"\"+ hisDataName;
                 finfo = new FileInfo(hisDataPathName);
                 if (finfo.Exists)
                 {
@@ -164,8 +159,6 @@ namespace MonitoringCableTmp
                 }
                 else
                 {
-                    //创建文件
-                    //File.Create(hisDataPathName).Close();
                     FileStream fs = new FileStream(hisDataPathName, FileMode.Create, FileAccess.Write);
                     fs.Close();
                     reHisDataName = hisDataPathName;
@@ -192,21 +185,33 @@ namespace MonitoringCableTmp
            /// 通过文件名查找对应保存温度数据的文件名是否存在(路径为当前目录下HisData)
            /// </summary>
            /// <param name="tempFileName">文件名（YYYY-MM-DD）</param>
+           /// <param name="ch">通道号(格式为CH+通道号)</param>
            /// <returns>文件名及全路径（不存在返回NULL）</returns>
-           public string FindTempTxtFiles(string tempFileName)
+           public string FindTempTxtFiles(string ch,string tempFileName)
            {
                string directoryName, filePath, hisDatadirectoryName;
                string hisDataPathName;
                string hisDataFileName = null;
+               string chName = null;
 
                FileInfo finfo;
                DirectoryInfo difo;
                filePath = Directory.GetCurrentDirectory();
                DateTime dt = DateTime.Now;
                directoryName = "HisData";
-               difo = Directory.GetParent(filePath);
-               hisDatadirectoryName = difo + @"\" + directoryName;
 
+               chName = ch;
+               if (chName == null)
+               {
+                   return null;
+               }
+               if (tempFileName == null)
+               {
+                   return null;
+               }
+               difo = Directory.GetParent(filePath);
+
+               hisDatadirectoryName = difo + @"\" + directoryName + @"\" + chName;
                hisDataPathName = hisDatadirectoryName + @"\" + tempFileName+".dat";
                finfo = new FileInfo(hisDataPathName);
                if (finfo.Exists)
@@ -225,28 +230,49 @@ namespace MonitoringCableTmp
         /// <param name="startTime">开始时间</param>
         /// <param name="endTime">结束时间</param>
         /// <returns>哈希表（时间，温度值）</returns>
-           public Hashtable getTempDataFromTxtFileForOnePoint(int ch, int pointNum, DateTime startTime, DateTime endTime)
+           public Hashtable getTempDataFromTxtFileForOnePoint(string ch, int pointNum, DateTime startTime, DateTime endTime)
            {
                Hashtable tempData = new Hashtable();
-
+               string dataStringLine;
+               string sDatetime, tempValue;
                string dataFileName;
-               //string hisDataFileName;
-               //string dataStringLine;
-               //string sDatetime;
-               //string tempValue;
                ArrayList fileLines = new ArrayList();
-
-               dataFileName = DateTime.Now.ToString("yyyy-MM-dd")+".dat";
+         
                DirectoryInfo difo = Directory.GetParent(Directory.GetCurrentDirectory());
-               MyFile myFile = new MyFile(dataFileName, difo.ToString()+"\\HisData");
+               
+               dataFileName = DateFormatToString(startTime);
+
+               //****************本例程目前只实现对单日数据查询，时间段查询后续完成 20170903 zjj******************//
+               dataFileName = FindTempTxtFiles(ch, dataFileName);
+               if (dataFileName == null)
+               {
+                   return null;
+               }
+               StreamReader sw = new StreamReader(dataFileName);
+
+               dataStringLine = sw.ReadLine();
+               while (sw.Peek() != -1)
+               {
+                   string[] stempValue = dataStringLine.Split(' ');
+                   sDatetime = stempValue[0];
+                   tempValue = stempValue[pointNum + 1];
+                   string[] stempV = tempValue.Split('_');
+                   tempValue = stempV[1];
+                   tempData.Add(sDatetime, tempValue);
+                   dataStringLine = sw.ReadLine();
+               }
+               sw.Close();
+               return tempData;
+               /*
+               MyFile myFile = new MyFile(dataFileName, difo.ToString());
+
                fileLines = myFile.readFile();
 
                foreach (string line in fileLines)
                {
                    string[] lineBlock = line.Split(' ');
                    //做时间差，如果在时间范围内，就记录这个时间行
-                   if (DateTime.Compare(startTime, Convert.ToDateTime(lineBlock[0]))<=0 
-                       && DateTime.Compare(endTime, Convert.ToDateTime(lineBlock[0]))>=0)
+                   if (DateTime.Compare(startTime, Convert.ToDateTime(lineBlock[0]))<=0  && DateTime.Compare(endTime, Convert.ToDateTime(lineBlock[0]))>=0)
                    {
                        for (int i = 1; i < lineBlock.Length; i++)
                        {
@@ -254,30 +280,15 @@ namespace MonitoringCableTmp
                            string[] pntTmp = lineBlock[i].Split('_');
                            if (Convert.ToInt32(pntTmp[0]) == pointNum)
                            {
-                               tempData.Add(lineBlock[0], pntTmp[1]);
+                               tempData.Add(lineBlock[0], pntTmp[pointNum]);
                            }
                        }
                    }
                }
+               */
 
 
-               //dataFileName = DateFormatToString(startTime);
-               //hisDataFileName = FindTempTxtFiles(dataFileName);
-               //StreamReader sw = new StreamReader(hisDataFileName);
-            
-               //dataStringLine = sw.ReadLine();
-               //while(sw.Peek() != -1)
-               //{
-               //    string[] stempValue = dataStringLine.Split(' ');
-               //    sDatetime = stempValue[0];
-               //    tempValue = stempValue[pointNum + 1];
-               //    string[] stempV = tempValue.Split('_');
-               //    tempValue = stempV[1];
-               //    tempData.Add(sDatetime, tempValue);
-               //    dataStringLine = sw.ReadLine();
-               //}
-               //sw.Close();
-               return tempData;
+
            }
         //----标记
         /// <summary>
@@ -287,7 +298,7 @@ namespace MonitoringCableTmp
         /// <param name="startTime">开始时间</param>
         /// <param name="endTime">结束时间</param>
         /// <returns>点与温度值的哈希表（点为关键字）</returns>
-           public Hashtable getTempDataFromTxtFileForAllPoint(int ch, DateTime startTime, DateTime endTime)
+           public Hashtable getTempDataFromTxtFileForAllPoint(string ch, DateTime startTime, DateTime endTime)
            {
                Hashtable tempData = null;
 
@@ -298,7 +309,7 @@ namespace MonitoringCableTmp
                string tempValue;
                string ponitID;
                dataFileName = DateFormatToString(startTime);
-               hisDataFileName = FindTempTxtFiles(dataFileName);
+               hisDataFileName = FindTempTxtFiles(ch,dataFileName);
                tempData = new Hashtable();
                StreamReader sw = new StreamReader(hisDataFileName);
                int arryNum = 0;
@@ -392,13 +403,29 @@ namespace MonitoringCableTmp
            public int ReadDtsData(int chNO)
            {
                int reValue = 0;
+               string chName;
+               dbComm dbcomm;
+               string chNum;
+
+               chNum = chNO.ToString();
+
+               chInfo = new string[3];
+               dbcomm = new dbComm();
+               chInfo = dbcomm.getChanalStartAndEnd(chNum);
+               chStart = Convert.ToInt32(chInfo[0]);
+               chEnd = Convert.ToInt32(chInfo[1]);
+               chLenth = Convert.ToInt32(chInfo[2]);
+
 
                TcpClient tcpClient = new TcpClient();
                tcpClient.Connect("192.168.2.134", 8603);
 
                NetworkStream ns = tcpClient.GetStream();
                NetworkStream nsRev = tcpClient.GetStream();
-
+               DateTime dt;
+               dt = new DateTime();
+               dt = DateTime.Now;
+               chName = "CH" + chNO.ToString();
                SendDataCSharp(sendBytes, ref _SendSize, 1, chNO);
            //    Console.Write("0x{0:X},0x{1:X},0x{2:X},0x{3:X},0x{4:X},0x{5:X},0x{6:X}\n",
            //           sendBytes[0], sendBytes[1], sendBytes[2], sendBytes[3], sendBytes[4], sendBytes[5], sendBytes[6]);
@@ -456,7 +483,8 @@ namespace MonitoringCableTmp
                        reValue = 0;
                    }
                   // WriteTempToFiles(130, 700);
-                   WriteTempToTxtFiles(130, 700);
+
+                   WriteTempToTxtFiles(chName, dt, chStart, chEnd);
 /*
                    double fMaxTemp = 0.0;
                    double fPos = 0.0;

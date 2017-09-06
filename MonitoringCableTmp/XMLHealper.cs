@@ -47,8 +47,230 @@ namespace MonitoringCableTmp
             set { filePath = value; }
             get { return filePath; }
         }
-
+        const string configFolderName = "Appconfig"; //配置信息文件夹名称
+      //  const string alarmFolderName = "alarm";
         #endregion
+
+        //20170904  zjj编写-------------------------------
+
+        /// <summary>
+        /// 获取需要访问文件夹绝对路径
+        /// </summary>
+        /// <param name="appFolderName">文件夹名称</param>
+        /// <returns> 文件夹绝对路径--ZJJ</returns>
+        public string getAppDirectoryName(string appFolderName)
+        {
+            string filePath;
+          //  FileInfo finfo;
+
+            DirectoryInfo difo;
+            filePath = Directory.GetCurrentDirectory();
+            difo = Directory.GetParent(filePath);
+            filePath =difo+ @"\" + appFolderName;
+            return filePath;
+        }
+        /// <summary>
+        /// 创建XML文件
+        /// </summary>
+        /// <param name="appFolderName">文件夹名称</param>
+        /// <param name="xmlFileName">xml文件名称</param>
+        /// <param name="rootName">根节点名</param>
+        /// <param name="Encode">编码方式:gb2312，UTF-8 等常见的</param>
+        /// <returns>BOOL</returns>
+        public bool CreateXmlDocument(string appFolderName, string xmlFileName, string rootName, string Encode)
+        {
+            string xmlFileFolderName, xmlFileFolderNameAndXmlName;
+            xmlFileFolderName = getAppDirectoryName(configFolderName);
+            xmlFileFolderNameAndXmlName = xmlFileFolderName + @"\" + xmlFileName+".xml";
+            try
+            {
+                XmlDeclaration xmldecl;
+                xmldecl = xmlDoc.CreateXmlDeclaration("1.0", Encode, null);
+                xmlDoc.AppendChild(xmldecl);
+                xmlelem = xmlDoc.CreateElement("", rootName, "");
+                xmlDoc.AppendChild(xmlelem);
+                xmlDoc.Save(xmlFileFolderNameAndXmlName);
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+        /// <summary>
+        /// /打开指定目录下的xml文件
+        /// </summary>
+        /// <param name="appFolderName">文件路径</param>
+        /// <param name="xmlFileName">文件名</param>
+        /// <returns>bool</returns>
+        public bool OpenXmlFile(string appFolderName, string xmlFileName)
+        {
+            string xmlFileFolderName, xmlFileFolderNameAndXmlName;
+            
+            xmlFileFolderName = getAppDirectoryName(configFolderName);
+            xmlFileFolderNameAndXmlName = xmlFileFolderName + @"\" + xmlFileName + ".xml";
+
+            if (!string.IsNullOrEmpty(xmlFileFolderNameAndXmlName))
+            {
+                xmlDoc.Load(xmlFileFolderNameAndXmlName);
+                filePath = xmlFileFolderNameAndXmlName;
+                return true;
+             }
+            else
+            {
+                return false;
+             }
+        }
+        /// <summary>
+        /// 保存XML文件，每次对XML文件修改后必须调用本过程
+        /// </summary>
+        public void SaveXmlDocument()
+        {
+            try
+            {
+                xmlDoc.Save(FilePath);
+            }
+            catch (XmlException xmle)
+            {
+                throw xmle;
+            }
+        }
+
+        /// <summary>
+        /// 功能: 保存XML文件
+        /// </summary>
+        /// <param name="tempXMLFilePath"></param>
+        public void SaveXmlDocument(string tempXMLFilePath)
+        {
+            try
+            {
+                xmlDoc.Save(tempXMLFilePath);
+            }
+            catch (XmlException xmle)
+            {
+                throw xmle;
+            }
+        }
+
+
+        #region 获取XML文件的根元素
+        /// <summary>
+        /// 获取XML文件的根元素
+        /// </summary>
+        public XmlNode GetXmlRoot()
+        {
+            return xmlDoc.DocumentElement;
+        }
+        #endregion
+        /// <summary>
+        /// 在根节点下添加父节点
+        /// </summary>
+        public void AddParentNode(string parentNode)
+        {
+            XmlNode root = GetXmlRoot();
+            XmlNode parentXmlNode = xmlDoc.CreateElement(parentNode);
+
+            root.AppendChild(parentXmlNode);
+        }
+
+        /// <summary>
+        /// 向一个已经存在的父节点中插入一个子节点
+        /// </summary>
+        public void AddChildNode(string parentNodePath, string childNodePath)
+        {
+            XmlNode parentXmlNode = xmlDoc.SelectSingleNode(parentNodePath);
+            XmlNode childXmlNode = xmlDoc.CreateElement(childNodePath);
+            parentXmlNode.AppendChild(childXmlNode);
+            // xmlDoc.AppendChild(childXmlNode);
+        }
+
+        #region 向一个节点添加属性
+        /// <summary>
+        /// 向一个节点添加属性
+        /// </summary>
+        public void AddAttribute(string NodePath, string NodeAttribute)
+        {
+            XmlAttribute nodeAttribute = xmlDoc.CreateAttribute(NodeAttribute);
+            XmlNode nodePath = xmlDoc.SelectSingleNode(NodePath);
+            nodePath.Attributes.Append(nodeAttribute);
+        }
+        #endregion
+
+        #region 插入一个节点和它的若干子节点
+        /// <summary>
+        /// 插入一个节点和它的若干子节点
+        /// </summary>
+        /// <param name="NewNodeName">插入的节点名称</param>
+        /// <param name="HasAttributes">此节点是否具有属性，True 为有，False 为无</param>
+        /// <param name="fatherNode">此插入节点的父节点</param>
+        /// <param name="htAtt">此节点的属性，Key 为属性名，Value 为属性值</param>
+        /// <param name="htSubNode"> 子节点的属性， Key 为Name,Value 为InnerText</param>
+        /// <returns>返回真为更新成功，否则失败</returns>
+        public bool InsertNode(string NewNodeName, bool HasAttributes, string fatherNode, Hashtable htAtt, Hashtable htSubNode)
+        {
+            try
+            {
+                xmlDoc.Load(FilePath);
+                XmlNode root = xmlDoc.SelectSingleNode(fatherNode);
+                xmlelem = xmlDoc.CreateElement(NewNodeName);
+                if (htAtt != null && HasAttributes)//若此节点有属性，则先添加属性
+                {
+                    SetAttributes(xmlelem, htAtt);
+                    AddNodes(xmlelem.Name, xmlDoc, xmlelem, htSubNode);//添加完此节点属性后，再添加它的子节点和它们的InnerText
+                }
+                else
+                {
+                    AddNodes(xmlelem.Name, xmlDoc, xmlelem, htSubNode);//若此节点无属性，那么直接添加它的子节点
+                }
+                root.AppendChild(xmlelem);
+                xmlDoc.Save(FilePath);
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+        #endregion
+
+        #region 设置节点属性
+        /// <summary>
+        /// 设置节点属性
+        /// </summary>
+        /// <param name="xe">节点所处的Element</param>
+        /// <param name="htAttribute">节点属性，Key 代表属性名称，Value 代表属性值</param>
+        public void SetAttributes(XmlElement xe, Hashtable htAttribute)
+        {
+            foreach (DictionaryEntry de in htAttribute)
+            {
+                xe.SetAttribute(de.Key.ToString(), de.Value.ToString());
+            }
+        }
+        #endregion
+
+        #region 增加子节点到根节点下
+        /// <summary>
+        /// 增加子节点到根节点下
+        /// </summary>
+        /// <param name="rootNode">上级节点名称</param>
+        /// <param name="xmlDoc">Xml 文档</param>
+        /// <param name="rootXe">父根节点所属的Element</param>
+        /// <param name="SubNodes">子节点属性，Key 为Name 值，Value 为InnerText 值</param>
+        public void AddNodes(string rootNode, XmlDocument xmlDoc, XmlElement rootXe, Hashtable SubNodes)
+        {
+            foreach (DictionaryEntry de in SubNodes)
+            {
+                xmlnode = xmlDoc.SelectSingleNode(rootNode);
+                XmlElement subNode = xmlDoc.CreateElement(de.Key.ToString());
+                subNode.InnerText = de.Value.ToString();
+                rootXe.AppendChild(subNode);
+            }
+        }
+        #endregion
+
+
+///---------------------------20170904---------------------------------------------------//
+
 
         #region 加载XML文件，创建操作对象
         /// <summary>
@@ -74,6 +296,8 @@ namespace MonitoringCableTmp
             }
         }
         #endregion
+
+
 
         #region 创建Xml 文档
         /// <summary>
@@ -101,6 +325,7 @@ namespace MonitoringCableTmp
                 return false;
             }
         }
+ 
 //-------------------------------------------------------------------------------------------------
         /// <summary>
         /// 创建一个带有根节点的Xml 文件--zjj
@@ -221,15 +446,7 @@ namespace MonitoringCableTmp
         }
         #endregion
 
-        #region 获取XML文件的根元素
-        /// <summary>
-        /// 获取XML文件的根元素
-        /// </summary>
-        public XmlNode GetXmlRoot()
-        {
-            return xmlDoc.DocumentElement;
-        }
-        #endregion
+
 
         #region 获取XML节点值
         /// <summary>
@@ -284,116 +501,6 @@ namespace MonitoringCableTmp
         }
         #endregion
 
-        #region 添加父节点
-
-        /// <summary>
-        /// 在根节点下添加父节点
-        /// </summary>
-        public void AddParentNode(string parentNode)
-        {
-            XmlNode root = GetXmlRoot();
-            XmlNode parentXmlNode = xmlDoc.CreateElement(parentNode);
-
-            root.AppendChild(parentXmlNode);
-        }
-        #endregion
-
-        #region 向一个已经存在的父节点中插入一个子节点
-        /// <summary>
-        /// 向一个已经存在的父节点中插入一个子节点
-        /// </summary>
-        public void AddChildNode(string parentNodePath, string childNodePath)
-        {
-            XmlNode parentXmlNode = xmlDoc.SelectSingleNode(parentNodePath);
-            XmlNode childXmlNode = xmlDoc.CreateElement(childNodePath);
-            parentXmlNode.AppendChild(childXmlNode);
-           // xmlDoc.AppendChild(childXmlNode);
-        }
-        #endregion
-
-        #region 向一个节点添加属性
-        /// <summary>
-        /// 向一个节点添加属性
-        /// </summary>
-        public void AddAttribute(string NodePath, string NodeAttribute)
-        {
-            XmlAttribute nodeAttribute = xmlDoc.CreateAttribute(NodeAttribute);
-            XmlNode nodePath = xmlDoc.SelectSingleNode(NodePath);
-            nodePath.Attributes.Append(nodeAttribute);
-        }
-        #endregion
-
-        #region 插入一个节点和它的若干子节点
-        /// <summary>
-        /// 插入一个节点和它的若干子节点
-        /// </summary>
-        /// <param name="NewNodeName">插入的节点名称</param>
-        /// <param name="HasAttributes">此节点是否具有属性，True 为有，False 为无</param>
-        /// <param name="fatherNode">此插入节点的父节点</param>
-        /// <param name="htAtt">此节点的属性，Key 为属性名，Value 为属性值</param>
-        /// <param name="htSubNode"> 子节点的属性， Key 为Name,Value 为InnerText</param>
-        /// <returns>返回真为更新成功，否则失败</returns>
-        public bool InsertNode(string NewNodeName, bool HasAttributes, string fatherNode, Hashtable htAtt, Hashtable htSubNode)
-        {
-            try
-            {
-                xmlDoc.Load(FilePath);
-                XmlNode root = xmlDoc.SelectSingleNode(fatherNode);
-                xmlelem = xmlDoc.CreateElement(NewNodeName);
-                if (htAtt != null && HasAttributes)//若此节点有属性，则先添加属性
-                {
-                    SetAttributes(xmlelem, htAtt);
-                    AddNodes(xmlelem.Name, xmlDoc, xmlelem, htSubNode);//添加完此节点属性后，再添加它的子节点和它们的InnerText
-                }
-                else
-                {
-                    AddNodes(xmlelem.Name, xmlDoc, xmlelem, htSubNode);//若此节点无属性，那么直接添加它的子节点
-                }
-                root.AppendChild(xmlelem);
-                xmlDoc.Save(FilePath);
-                return true;
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
-        }
-        #endregion
-
-        #region 设置节点属性
-        /// <summary>
-        /// 设置节点属性
-        /// </summary>
-        /// <param name="xe">节点所处的Element</param>
-        /// <param name="htAttribute">节点属性，Key 代表属性名称，Value 代表属性值</param>
-        public void SetAttributes(XmlElement xe, Hashtable htAttribute)
-        {
-            foreach (DictionaryEntry de in htAttribute)
-            {
-                xe.SetAttribute(de.Key.ToString(), de.Value.ToString());
-            }
-        }
-        #endregion
-
-        #region 增加子节点到根节点下
-        /// <summary>
-        /// 增加子节点到根节点下
-        /// </summary>
-        /// <param name="rootNode">上级节点名称</param>
-        /// <param name="xmlDoc">Xml 文档</param>
-        /// <param name="rootXe">父根节点所属的Element</param>
-        /// <param name="SubNodes">子节点属性，Key 为Name 值，Value 为InnerText 值</param>
-        public void AddNodes(string rootNode, XmlDocument xmlDoc, XmlElement rootXe, Hashtable SubNodes)
-        {
-            foreach (DictionaryEntry de in SubNodes)
-            {
-                xmlnode = xmlDoc.SelectSingleNode(rootNode);
-                XmlElement subNode = xmlDoc.CreateElement(de.Key.ToString());
-                subNode.InnerText = de.Value.ToString();
-                rootXe.AppendChild(subNode);
-            }
-        }
-        #endregion
 
         //更新
 
@@ -588,38 +695,6 @@ namespace MonitoringCableTmp
 
         #endregion
 
-        #region 保存XML文件
-        /// <summary>
-        /// 功能: 
-        /// 保存XML文件
-        /// 
-        /// </summary>
-        public void SavexmlDocument()
-        {
-            try
-            {
-                xmlDoc.Save(FilePath);
-            }
-            catch (XmlException xmle)
-            {
-                throw xmle;
-            }
-        }
-        /// <summary>
-        /// 功能: 保存XML文件
-        /// </summary>
-        /// <param name="tempXMLFilePath"></param>
-        public void SavexmlDocument(string tempXMLFilePath)
-        {
-            try
-            {
-                xmlDoc.Save(tempXMLFilePath);
-            }
-            catch (XmlException xmle)
-            {
-                throw xmle;
-            }
-        }
-        #endregion
+ 
     }
 }

@@ -32,16 +32,16 @@
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
-            this.toolStripComboBox1 = new System.Windows.Forms.ToolStripComboBox();
+            this.cmbChannel = new System.Windows.Forms.ToolStripComboBox();
             this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
             this.toolStripComboBox2 = new System.Windows.Forms.ToolStripComboBox();
             this.toolStripLabel4 = new System.Windows.Forms.ToolStripSeparator();
-            this.dateTimePicker1 = new System.Windows.Forms.DateTimePicker();
+            this.toolStripLabel3 = new System.Windows.Forms.ToolStripLabel();
+            this.cmbPointNum = new System.Windows.Forms.ToolStripComboBox();
+            this.dtpStartTime = new System.Windows.Forms.DateTimePicker();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.dateTimePicker2 = new System.Windows.Forms.DateTimePicker();
-            this.toolStripLabel3 = new System.Windows.Forms.ToolStripLabel();
-            this.toolStripComboBox3 = new System.Windows.Forms.ToolStripComboBox();
+            this.dtpEndTime = new System.Windows.Forms.DateTimePicker();
             this.btnSelect = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.tChart1 = new Steema.TeeChart.TChart();
@@ -63,12 +63,12 @@
             this.toolStrip1.BackColor = System.Drawing.SystemColors.MenuBar;
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripLabel1,
-            this.toolStripComboBox1,
+            this.cmbChannel,
             this.toolStripLabel2,
             this.toolStripComboBox2,
             this.toolStripLabel4,
             this.toolStripLabel3,
-            this.toolStripComboBox3});
+            this.cmbPointNum});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1240, 25);
@@ -81,16 +81,16 @@
             this.toolStripLabel1.Size = new System.Drawing.Size(56, 22);
             this.toolStripLabel1.Text = "通道选择";
             // 
-            // toolStripComboBox1
+            // cmbChannel
             // 
-            this.toolStripComboBox1.Items.AddRange(new object[] {
+            this.cmbChannel.Items.AddRange(new object[] {
             "通道1",
             "通道2",
             "通道3",
             "通道4"});
-            this.toolStripComboBox1.Name = "toolStripComboBox1";
-            this.toolStripComboBox1.Size = new System.Drawing.Size(121, 25);
-            this.toolStripComboBox1.Text = "通道1";
+            this.cmbChannel.Name = "cmbChannel";
+            this.cmbChannel.Size = new System.Drawing.Size(121, 25);
+            this.cmbChannel.Text = "通道1";
             // 
             // toolStripLabel2
             // 
@@ -108,12 +108,27 @@
             this.toolStripLabel4.Name = "toolStripLabel4";
             this.toolStripLabel4.Size = new System.Drawing.Size(6, 25);
             // 
-            // dateTimePicker1
+            // toolStripLabel3
             // 
-            this.dateTimePicker1.Location = new System.Drawing.Point(619, 3);
-            this.dateTimePicker1.Name = "dateTimePicker1";
-            this.dateTimePicker1.Size = new System.Drawing.Size(99, 21);
-            this.dateTimePicker1.TabIndex = 2;
+            this.toolStripLabel3.Name = "toolStripLabel3";
+            this.toolStripLabel3.Size = new System.Drawing.Size(56, 22);
+            this.toolStripLabel3.Text = "点位选择";
+            // 
+            // cmbPointNum
+            // 
+            this.cmbPointNum.Name = "cmbPointNum";
+            this.cmbPointNum.Size = new System.Drawing.Size(121, 25);
+            this.cmbPointNum.Text = "0";
+            // 
+            // dtpStartTime
+            // 
+            this.dtpStartTime.CustomFormat = "yyyy年MM月dd日 HH:mm:ss";
+            this.dtpStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dtpStartTime.Location = new System.Drawing.Point(619, 3);
+            this.dtpStartTime.MinDate = new System.DateTime(2017, 1, 1, 0, 0, 0, 0);
+            this.dtpStartTime.Name = "dtpStartTime";
+            this.dtpStartTime.Size = new System.Drawing.Size(184, 21);
+            this.dtpStartTime.TabIndex = 2;
             // 
             // label1
             // 
@@ -127,33 +142,26 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(724, 7);
+            this.label2.Location = new System.Drawing.Point(809, 7);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(53, 12);
             this.label2.TabIndex = 4;
             this.label2.Text = "结束时间";
             // 
-            // dateTimePicker2
+            // dtpEndTime
             // 
-            this.dateTimePicker2.Location = new System.Drawing.Point(783, 3);
-            this.dateTimePicker2.Name = "dateTimePicker2";
-            this.dateTimePicker2.Size = new System.Drawing.Size(121, 21);
-            this.dateTimePicker2.TabIndex = 5;
-            // 
-            // toolStripLabel3
-            // 
-            this.toolStripLabel3.Name = "toolStripLabel3";
-            this.toolStripLabel3.Size = new System.Drawing.Size(56, 22);
-            this.toolStripLabel3.Text = "点位选择";
-            // 
-            // toolStripComboBox3
-            // 
-            this.toolStripComboBox3.Name = "toolStripComboBox3";
-            this.toolStripComboBox3.Size = new System.Drawing.Size(121, 25);
+            this.dtpEndTime.CustomFormat = "yyyy年MM月dd日 HH:mm:ss";
+            this.dtpEndTime.Enabled = false;
+            this.dtpEndTime.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dtpEndTime.Location = new System.Drawing.Point(868, 3);
+            this.dtpEndTime.MinDate = new System.DateTime(2017, 1, 1, 0, 0, 0, 0);
+            this.dtpEndTime.Name = "dtpEndTime";
+            this.dtpEndTime.Size = new System.Drawing.Size(178, 21);
+            this.dtpEndTime.TabIndex = 5;
             // 
             // btnSelect
             // 
-            this.btnSelect.Location = new System.Drawing.Point(916, 0);
+            this.btnSelect.Location = new System.Drawing.Point(1064, 2);
             this.btnSelect.Name = "btnSelect";
             this.btnSelect.Size = new System.Drawing.Size(75, 23);
             this.btnSelect.TabIndex = 6;
@@ -226,6 +234,11 @@
             // 
             // 
             // 
+            this.tChart1.Header.Lines = new string[] {
+        "历史查询"};
+            // 
+            // 
+            // 
             // 
             // 
             // 
@@ -290,13 +303,15 @@
             this.ClientSize = new System.Drawing.Size(1240, 451);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.btnSelect);
-            this.Controls.Add(this.dateTimePicker2);
+            this.Controls.Add(this.dtpEndTime);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.dateTimePicker1);
+            this.Controls.Add(this.dtpStartTime);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.statusStrip1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "frmTempSelect";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "温度历史查询";
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
@@ -311,16 +326,16 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.ToolStripLabel toolStripLabel1;
-        private System.Windows.Forms.ToolStripComboBox toolStripComboBox1;
+        private System.Windows.Forms.ToolStripComboBox cmbChannel;
         private System.Windows.Forms.ToolStripLabel toolStripLabel2;
         private System.Windows.Forms.ToolStripComboBox toolStripComboBox2;
         private System.Windows.Forms.ToolStripSeparator toolStripLabel4;
         private System.Windows.Forms.ToolStripLabel toolStripLabel3;
-        private System.Windows.Forms.ToolStripComboBox toolStripComboBox3;
-        private System.Windows.Forms.DateTimePicker dateTimePicker1;
+        private System.Windows.Forms.ToolStripComboBox cmbPointNum;
+        private System.Windows.Forms.DateTimePicker dtpStartTime;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.DateTimePicker dateTimePicker2;
+        private System.Windows.Forms.DateTimePicker dtpEndTime;
         private System.Windows.Forms.Button btnSelect;
         private System.Windows.Forms.GroupBox groupBox1;
         private Steema.TeeChart.TChart tChart1;
